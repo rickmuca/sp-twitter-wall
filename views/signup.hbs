@@ -1,0 +1,10 @@
+{{#if error}}
+    <p>There was an error signing up: {{error}}.</p>
+{{/if}}
+<form action='/users/signup' method='post'>
+    Username: <input type='text' name='username'><br>
+    Password: <input type='password' name='password'><br>
+    Password (confirmation): <input type='password' name='password_confirmation'><br>
+
+    <button type='submit'>Sign up</button>
+</form>
