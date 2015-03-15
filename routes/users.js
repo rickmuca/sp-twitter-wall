@@ -1,37 +1,12 @@
 var express = require('express');
 var router = express.Router();
 var mongo = require('../controllers/mongo');
-var user_controller = require('../controllers/usercontroller');
 
 // This is a middleware that we will use on routes where
 // we _require_ that a user is logged in, such as the /secret url
 function requireUser(req, res, next){
     if (!req.user) {
         res.redirect('/not_allowed');
-    } else {
-        next();
-    }
-}
-
-// This middleware checks if the user is logged in and sets
-// req.user and res.locals.user appropriately if so.
-function checkIfLoggedIn(req, res, next){
-    if (req.session.username) {
-        var coll = mongo.collection('users');
-        coll.findOne({username: req.session.username}, function(err, user){
-            if (user) {
-                // set a 'user' property on req
-                // so that the 'requireUser' middleware can check if the user is
-                // logged in
-                req.user = user;
-
-                // Set a res.locals variable called 'user' so that it is available
-                // to every handlebars template.
-                res.locals.user = user;
-            }
-
-            next();
-        });
     } else {
         next();
     }
@@ -78,7 +53,7 @@ function authenticateUser(username, password, callback){
     });
 }
 
-/* GET users listing. */
+/* GET index page. */
 router.get('/', function(req, res, next) {
     var coll = mongo.collection('users');
     coll.find({}).toArray(function(err, users){
@@ -90,10 +65,7 @@ router.get('/login', function(req, res){
     res.render('login');
 });
 
-router.get('/logout', function(req, res){res.render('error', {
-    message: err.message,
-    error: {}
-});
+router.get('/logout', function(req, res){
     delete req.session.username;
     res.redirect('/');
 });
