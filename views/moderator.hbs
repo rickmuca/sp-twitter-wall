@@ -3,17 +3,10 @@
 <head lang="en">
     <meta charset="UTF-8">
     <title>SmartPlayDS Twitter Wall Moderator</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
     <!-- Bootstrap -->
     <link rel="stylesheet" href="https://bootswatch.com/cerulean/bootstrap.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
     <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
-    <!--<script type="text/javascript">
-        $(document).ready(function(){
-            $(document).on("click", "button.btn-danger" , function() {
-                $(this).parent().remove();
-            });
-        });
-    </script>-->
 </head>
 <body>
 <nav class="navbar navbar-default">
@@ -29,30 +22,8 @@
         </div>
 
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-            <ul class="nav navbar-nav">
-                <li class="active"><a href="#">Link <span class="sr-only">(current)</span></a></li>
-                <li><a href="#">Link</a></li>
-                <li class="dropdown">
-                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Dropdown <span class="caret"></span></a>
-                    <ul class="dropdown-menu" role="menu">
-                        <li><a href="#">Action</a></li>
-                        <li><a href="#">Another action</a></li>
-                        <li><a href="#">Something else here</a></li>
-                        <li class="divider"></li>
-                        <li><a href="#">Separated link</a></li>
-                        <li class="divider"></li>
-                        <li><a href="#">One more separated link</a></li>
-                    </ul>
-                </li>
-            </ul>
-            <form class="navbar-form navbar-left" role="search">
-                <div class="form-group">
-                    <input class="form-control" placeholder="Search" type="text">
-                </div>
-                <button type="submit" class="btn btn-default">Submit</button>
-            </form>
             <ul class="nav navbar-nav navbar-right">
-                <li><a href="#">Link</a></li>
+                <li><a href="#">{{user.hashtag}}</a></li>
             </ul>
         </div>
     </div>
@@ -61,9 +32,11 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         var socket = io.connect();
+        var socketReceiverName = $('ul.navbar-right').children('li').text();
         jQuery(function ($) {
             var tweet_list = $('ul.tweets');
-            socket.on('tweet', function (tweet){
+            console.log(socketReceiverName);
+            socket.on(socketReceiverName, function (tweet){
                 tweet_list
                         .prepend('<ul class="tweet"><li class="tweet_user">' + tweet.user + '</li><div class="tweet_text">"' + tweet.text + '</div><div class="tweet_user_img" style="display: none;">' + tweet.user_img + '</div>'+ '<button type="button" class="btn btn-success"> ' +
                         '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>Accept</button>'+ '<button type="button" class="btn btn-danger"> ' +
@@ -72,8 +45,7 @@
         });
         $(document).ready(function(){
             $(document).on("click", "button.btn-success" , function() {
-                console.log($(this).parent().find('li.tweet_user').text());
-                socket.emit('wall', {user: $(this).parent().find('li.tweet_user').text(),
+                socket.emit('wall' + socketReceiverName, {user: $(this).parent().find('li.tweet_user').text(),
                                     text: $(this).parent().find('div.tweet_text').text(),
                                     user_img: $(this).parent().find('div.tweet_user_img').text()} );
                 $(this).parent().remove();

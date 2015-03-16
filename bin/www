@@ -7,16 +7,8 @@
 var app = require('../app');
 var debug = require('debug')('smartplay-twitter-wall:server');
 var http = require('http');
-var Twitter = require('twitter');
 var mongoUrl = 'mongodb://localhost:27017/users';
 var mongo = require('../controllers/mongo');
-
-var twitter_client = new Twitter({
-    consumer_key: 'l0RgpgwZqmFHELC4mLFbweiPn',
-    consumer_secret: 'elePPB56ILavK7sGmcpvZqn1LuENe5B6ikLMYILpZIyH1w2HDd',
-    access_token_key: '1903965426-BX530HWvnDW6uEt7F8ezpnsuCzNjGlrjVpY2Lwd',
-    access_token_secret: '4iZ6r19k7tWlxT4nYa4oQbj2KMFeUyK9vEweYdpgaQ7Gf'
-});
 
 /**
  * Get port from environment and store in Express.
@@ -31,10 +23,12 @@ app.set('port', port);
 
 var server = http.createServer(app);
 
+global.io = require('socket.io')(server);
+
+
 /**
  * Listen on provided port, on all network interfaces.
  */
-var io = require('socket.io')(server)
 
 mongo.connect(mongoUrl, function(){
     console.log('Connected to mongo at: ' + mongoUrl);
@@ -47,26 +41,7 @@ mongo.connect(mongoUrl, function(){
 server.on('error', onError);
 server.on('listening', onListening);
 
-twitter_client.stream('statuses/filter', {track: 'java'}, function(stream) {
-    stream.on('data', function(tweet) {
-        io.sockets.emit('tweet', {
-            id: tweet.id,
-            user: tweet.user.screen_name,
-            user_img: tweet.user.profile_image_url,
-            text: tweet.text
-        });
-    });
 
-    stream.on('error', function(error) {
-        throw error;
-    });
-});
-
-io.on('connection', function (socket) {
-    socket.on('wall', function (data) {
-        io.sockets.emit('wall', data);
-    });
-});
 
 /**
  * Normalize a port into a number, string, or false.

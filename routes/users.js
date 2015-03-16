@@ -18,7 +18,7 @@ function requireUser(req, res, next){
 //
 // Possible errors: the passwords are not the same, and a user
 // with that username already exists.
-function createUser(username, password, password_confirmation, callback){
+function createUser(username, password, password_confirmation, hashtag, admin,  callback){
     var coll = mongo.collection('users');
 
     if (password !== password_confirmation) {
@@ -26,7 +26,7 @@ function createUser(username, password, password_confirmation, callback){
         callback(err);
     } else {
         var query      = {username:username};
-        var userObject = {username: username, password: password};
+        var userObject = {username: username, password: password, hashtag: hashtag, admin: admin};
 
         // make sure this username does not exist already
         coll.findOne(query, function(err, user){
@@ -80,12 +80,15 @@ router.get('/signup', function(req,res){
 });
 
 router.post('/signup', function(req, res){
-    // The 3 variables below all come from the form
-    // in views/signup.hbs
+    console.log(req);
     var username = req.body.username;
     var password = req.body.password;
     var password_confirmation = req.body.password_confirmation;
-    createUser(username, password, password_confirmation, function(err, user){
+    var hashtag = req.body.hashtag;
+    var admin = false;
+    if (req.body.admin) admin = true;
+
+    createUser(username, password, password_confirmation, hashtag, admin, function(err, user){
         if (err) {
             res.render('signup', {error: err});
         } else {
@@ -93,7 +96,7 @@ router.post('/signup', function(req, res){
             // This way subsequent requests will know the user is logged in.
             req.session.username = user.username;
 
-            res.redirect('/moderator');
+            res.redirect('/');
         }
     });
 });
@@ -109,7 +112,7 @@ router.post('/login', function(req, res){
             // This way subsequent requests will know the user is logged in.
             req.session.username = user.username;
 
-            res.redirect('/moderator');
+            res.redirect('/');
         } else {
             res.render('login', {badCredentials: true});
         }
