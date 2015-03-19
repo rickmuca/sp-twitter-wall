@@ -10,11 +10,61 @@ var twitter_client = new Twitter({
     access_token_secret: '4iZ6r19k7tWlxT4nYa4oQbj2KMFeUyK9vEweYdpgaQ7Gf'
 });
 
+
+/* GET admin page  */
+router.get('/admin', function(req, res, next) {
+    if (req.session.username) {
+        var coll = mongo.collection('users');
+        coll.findOne({username: req.session.username}, function(err, user){
+            if (user) {
+                // set a 'user' property on req
+                // so that the 'requireUser' middleware can check if the user is
+                // logged in
+                req.user = user;
+
+                // Set a res.locals variable called 'user' so that it is available
+                // to every handlebars template.
+                res.locals.user = user;
+
+                if (user.admin === true) {
+                    coll.find({}).toArray(function(err, users){
+                        res.render('admin_panel', {users:users});
+                    })
+                }
+            }
+        });
+    } else {
+        res.render('login');
+    }
+});
+
 /* GET index page.
-*
-*  If user is logged in, moderator page is shown. Else, log in page is shown
-*  */
+ *
+ *  If user is logged in, moderator page is shown. Else, log in page is shown
+ *  */
 router.get('/', function(req, res, next) {
+    if (req.session.username) {
+        var coll = mongo.collection('users');
+        coll.findOne({username: req.session.username}, function(err, user){
+            if (user) {
+                // set a 'user' property on req
+                // so that the 'requireUser' middleware can check if the user is
+                // logged in
+                req.user = user;
+
+                // Set a res.locals variable called 'user' so that it is available
+                // to every handlebars template.
+                res.locals.user = user;
+            }
+            res.redirect('/moderator');
+        });
+    } else {
+        res.render('login');
+    }
+});
+
+/* GET moderator page */
+router.get('/moderator', function(req, res, next) {
     if (req.session.username) {
         var coll = mongo.collection('users');
         coll.findOne({username: req.session.username}, function(err, user){

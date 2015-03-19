@@ -43,6 +43,26 @@ function createUser(username, password, password_confirmation, hashtag, admin,  
     }
 }
 
+function modifyUser(username, hashtag, admin,  callback){
+    var coll = mongo.collection('users');
+
+    var query      = {username:username};
+    var userObject = {username: username, password: password, hashtag: hashtag, admin: admin};
+
+    // make sure this username does not exist already
+    coll.findOne(query, function(err, user){
+        if (user) {
+            err = 'The username you entered already exists';
+            callback(err);
+        } else {
+            // create the new user
+            coll.insert(userObject, function(err,user){
+                callback(err,user);
+            });
+        }
+    });
+}
+
 // This finds a user matching the username and password that
 // were given.
 function authenticateUser(username, password, callback){
@@ -55,10 +75,7 @@ function authenticateUser(username, password, callback){
 
 /* GET index page. */
 router.get('/', function(req, res, next) {
-    var coll = mongo.collection('users');
-    coll.find({}).toArray(function(err, users){
-        res.render('index', {users:users});
-    })
+    res.redirect('/');
 });
 
 router.get('/login', function(req, res){
@@ -70,17 +87,38 @@ router.get('/logout', function(req, res){
     res.redirect('/');
 });
 
-router.get('/not_allowed', function(req, res){
-    res.render('not_allowed');
-});
-
 
 router.get('/signup', function(req,res){
-    res.render('signup');
+    if (req.session.username) {
+        var coll = mongo.collection('users');
+        coll.findOne({username: req.session.username}, function(err, user){
+            if (user) {
+                // set a 'user' property on req
+                // so that the 'requireUser' middleware can check if the user is
+                // logged in
+                req.user = user;
+
+                // Set a res.locals variable called 'user' so that it is available
+                // to every handlebars template.
+                res.locals.user = user;
+
+                if (user.admin === true) {
+                    res.render('signup');
+                }
+                else {
+                    res.redirect('/')
+                }
+            }
+            else {
+                res.redirect('/')
+            }
+        });
+    } else {
+        res.render('login');
+    }
 });
 
 router.post('/signup', function(req, res){
-    console.log(req);
     var username = req.body.username;
     var password = req.body.password;
     var password_confirmation = req.body.password_confirmation;
@@ -92,11 +130,59 @@ router.post('/signup', function(req, res){
         if (err) {
             res.render('signup', {error: err});
         } else {
+            res.redirect('/admin');
+        }
+    });
+});
 
-            // This way subsequent requests will know the user is logged in.
-            req.session.username = user.username;
+router.get('/modify/', function(req,res){
+    if (req.session.username) {
+        var coll = mongo.collection('users');
+        coll.findOne({username: req.session.username}, function(err, user){
+            if (user) {
+                // set a 'user' property on req
+                // so that the 'requireUser' middleware can check if the user is
+                // logged in
+                req.user = user;
 
-            res.redirect('/');
+                // Set a res.locals variable called 'user' so that it is available
+                // to every handlebars template.
+                res.locals.user = user;
+
+                if (user.admin === true) {
+                    coll.findOne({_id: req.user_name}, function(err, userModified) {
+                        if(userModified) {
+                            res.render('modify', {user: userModified});
+                        }
+                        else {
+                            res.redirect('/');
+                        }
+                    });
+                }
+                else {
+                    res.redirect('/')
+                }
+            }
+            else {
+                res.redirect('/')
+            }
+        });
+    } else {
+        res.render('login');
+    }
+});
+
+router.post('/modify', function(req, res){
+    var username = req.body.username;
+    var hashtag = req.body.hashtag;
+    var admin = false;
+    if (req.body.admin) admin = true;
+
+    createUser(username, password, password_confirmation, hashtag, admin, function(err, user){
+        if (err) {
+            res.render('signup', {error: err});
+        } else {
+            res.redirect('/admin');
         }
     });
 });
