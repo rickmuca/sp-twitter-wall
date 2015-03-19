@@ -81,7 +81,6 @@ router.get('/moderator', function(req, res, next) {
 
                 twitter_client.stream('statuses/filter', {track: user.hashtag}, function(stream) {
                     stream.on('data', function(tweet) {
-                        console.log(tweet.text);
                         global.io.sockets.emit(user.hashtag, {
                             id: tweet.id,
                             user: tweet.user.screen_name,
