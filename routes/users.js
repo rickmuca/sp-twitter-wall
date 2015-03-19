@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var mongo = require('../controllers/mongo');
+var ObjectID = require('mongodb').ObjectID;
 
 // This is a middleware that we will use on routes where
 // we _require_ that a user is logged in, such as the /secret url
@@ -43,20 +44,21 @@ function createUser(username, password, password_confirmation, hashtag, admin,  
     }
 }
 
-function modifyUser(username, hashtag, admin,  callback){
+function modifyUser(id, hashtag, admin,  callback){
     var coll = mongo.collection('users');
 
-    var query      = {username:username};
-    var userObject = {username: username, password: password, hashtag: hashtag, admin: admin};
+    var query      = {_id: ObjectID(id)};
 
     // make sure this username does not exist already
     coll.findOne(query, function(err, user){
-        if (user) {
+        if (!user) {
             err = 'The username you entered already exists';
             callback(err);
         } else {
-            // create the new user
-            coll.insert(userObject, function(err,user){
+            // modify the user
+            user.hashtag = hashtag;
+            user.admin = admin;
+            coll.save(user, function(err,user){
                 callback(err,user);
             });
         }
@@ -135,7 +137,7 @@ router.post('/signup', function(req, res){
     });
 });
 
-router.get('/modify/', function(req,res){
+router.get('/modify/:id', function(req,res){
     if (req.session.username) {
         var coll = mongo.collection('users');
         coll.findOne({username: req.session.username}, function(err, user){
@@ -150,12 +152,47 @@ router.get('/modify/', function(req,res){
                 res.locals.user = user;
 
                 if (user.admin === true) {
-                    coll.findOne({_id: req.user_name}, function(err, userModified) {
+                    coll.findOne({_id: ObjectID(req.params.id)}, function(err, userModified) {
                         if(userModified) {
                             res.render('modify', {user: userModified});
                         }
                         else {
-                            res.redirect('/');
+                            err = 'The user not exists';
+                            callback(err);
+                        }
+                    });
+                }
+                else {
+                    res.redirect('/')
+                }
+            }
+            else {
+                res.redirect('/')
+            }
+        });
+    } else {
+        res.render('login');
+    }
+});
+
+router.delete('/:id', function(req,res, callback){
+    if (req.session.username) {
+        var coll = mongo.collection('users');
+        coll.findOne({username: req.session.username}, function(err, user){
+            if (user) {
+                req.user = user;
+                res.locals.user = user;
+
+                if (user.admin === true) {
+                    coll.findOne({_id: ObjectID(req.params.id)}, function(err, userDeleted) {
+                        if(userDeleted) {
+                            coll.remove(userDeleted, function(err,user){
+                                callback(err,user);
+                            });
+                        }
+                        else {
+                            err = 'The user not exists';
+                            callback(err);
                         }
                     });
                 }
@@ -173,17 +210,13 @@ router.get('/modify/', function(req,res){
 });
 
 router.post('/modify', function(req, res){
-    var username = req.body.username;
+    var id = req.body.user_id;
     var hashtag = req.body.hashtag;
     var admin = false;
     if (req.body.admin) admin = true;
 
-    createUser(username, password, password_confirmation, hashtag, admin, function(err, user){
-        if (err) {
-            res.render('signup', {error: err});
-        } else {
-            res.redirect('/admin');
-        }
+    modifyUser(id, hashtag, admin, function(err, user){
+        res.redirect('/admin');
     });
 });
 

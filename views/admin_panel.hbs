@@ -13,12 +13,17 @@
     <script>
         $(document).ready(function(){
             $(document).on("click", "button.btn-default" , function() {
-                var user_id = $(this).parent().find('user_id').text();
-                $.get( "/users/modify/" +  user_id);
+                var user_id = $(this).parent().find('b.user_id').text();
+                console.log(user_id);
+                $(location).attr('href',"/users/modify/" +  user_id);
             });
-            $(document).on("click", "button.btn-remove" , function() {
-                var user_id = $(this).parent().find('user_id').text();
-                $.get( "/users/delete/" +  user_id);
+            $(document).on("click", "button.btn-danger" , function() {
+                var user_id = $(this).parent().find('b.user_id').text();
+                $.ajax({
+                    url: "/users/" +  user_id,
+                    type: 'DELETE'
+                });
+                location.reload();
             });
         });
     </script>

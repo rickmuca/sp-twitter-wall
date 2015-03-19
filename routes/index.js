@@ -3,12 +3,6 @@ var router = express.Router();
 path = require('path');
 var mongo = require('../controllers/mongo');
 var Twitter = require('twitter');
-var twitter_client = new Twitter({
-    consumer_key: 'l0RgpgwZqmFHELC4mLFbweiPn',
-    consumer_secret: 'elePPB56ILavK7sGmcpvZqn1LuENe5B6ikLMYILpZIyH1w2HDd',
-    access_token_key: '1903965426-BX530HWvnDW6uEt7F8ezpnsuCzNjGlrjVpY2Lwd',
-    access_token_secret: '4iZ6r19k7tWlxT4nYa4oQbj2KMFeUyK9vEweYdpgaQ7Gf'
-});
 
 
 /* GET admin page  */
@@ -78,9 +72,16 @@ router.get('/moderator', function(req, res, next) {
                 // to every handlebars template.
                 res.locals.user = user;
 
+                var twitter_client = new Twitter({
+                    consumer_key: 'l0RgpgwZqmFHELC4mLFbweiPn',
+                    consumer_secret: 'elePPB56ILavK7sGmcpvZqn1LuENe5B6ikLMYILpZIyH1w2HDd',
+                    access_token_key: '1903965426-BX530HWvnDW6uEt7F8ezpnsuCzNjGlrjVpY2Lwd',
+                    access_token_secret: '4iZ6r19k7tWlxT4nYa4oQbj2KMFeUyK9vEweYdpgaQ7Gf'
+                });
 
                 twitter_client.stream('statuses/filter', {track: user.hashtag}, function(stream) {
                     stream.on('data', function(tweet) {
+                        console.log(tweet.text);
                         global.io.sockets.emit(user.hashtag, {
                             id: tweet.id,
                             user: tweet.user.screen_name,

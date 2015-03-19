@@ -32,10 +32,16 @@
     </div>
 </nav>
 <form action='/users/modify' method='post'>
-    Username: <input type='text' name='username'><br>
-    Assigned Hashtag or word: <input type='text' name='hashtag'><br>
-    Administrator<input type="checkbox" name="admin" value="admin"><br>
-    <button type='submit'>Sign up</button>
+    <input type="hidden" name="user_id" value="{{user._id}}">
+    Username: <b>{{user.username}}</b><br>
+    Assigned Hashtag or word: <input type='text' name='hashtag' value="{{user.hashtag}}"><br>
+    Administrator
+    {{#if user.admin}}
+        <input type="checkbox" name="admin" value="admin" checked><br>
+    {{else}}
+        <input type="checkbox" name="admin" value="admin"><br>
+    {{/if}}
+    <button type='submit'>Modify</button>
 </form>
 </body>
 </html>
