@@ -5,6 +5,20 @@ var mongo = require('../controllers/mongo');
 var Twitter = require('twitter');
 
 
+function timeConverter(timestamp){
+    var a = new Date(parseInt(timestamp));
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var year = a.getFullYear();
+    var month = months[a.getMonth()];
+    var date = a.getDate();
+    var hour = ("0" + a.getHours()).slice(-2);
+    var min = ("0" + a.getMinutes()).slice(-2);
+    var time = date + ',' + month + ' ' + year + ' ' + hour + ':' + min;
+    return time;
+}
+
+
+
 /* GET admin page  */
 router.get('/admin', function(req, res, next) {
     if (req.session.username) {
@@ -83,9 +97,11 @@ router.get('/moderator', function(req, res, next) {
                     stream.on('data', function(tweet) {
                         global.io.sockets.emit(user.hashtag, {
                             id: tweet.id,
+                            user_name: tweet.user.name,
                             user: tweet.user.screen_name,
                             user_img: tweet.user.profile_image_url,
-                            text: tweet.text
+                            text: tweet.text,
+                            date: timeConverter(tweet.timestamp_ms)
                         });
                     });
 

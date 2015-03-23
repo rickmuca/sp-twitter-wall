@@ -41,8 +41,11 @@
             console.log(socketReceiverName);
             socket.on(socketReceiverName, function (tweet){
                 tweet_list
-                        .prepend('<ul class="tweet"><li class="tweet_user">' + tweet.user + '</li><div class="tweet_text">"' + tweet.text + '</div><div class="tweet_user_img" style="display: none;">' + tweet.user_img + '</div>'+ '<button type="button" class="btn btn-success"> ' +
-                        '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>Accept</button>'+ '<button type="button" class="btn btn-danger"> ' +
+                        .prepend('<ul class="tweet"><li class="tweet_user">' + tweet.user + '</li><div class="tweet_text">"' + tweet.text + '</div> + ' +
+                        '<div class="tweet_user_img" style="display: none;">' + tweet.user_img + '</div>' +
+                        '<div class="tweet_user_name" style="display: none;">' + tweet.user_name + '</div>' +
+                        '<div class="tweet_date" style="display: none;">' + tweet.date + '</div>'+'<button type="button" class="btn btn-success"> ' +
+                        '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>Accept</button>' + '<button type="button" class="btn btn-danger"> ' +
                         '<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>Remove</button></div>');
             });
         });
@@ -50,7 +53,9 @@
             $(document).on("click", "button.btn-success" , function() {
                 socket.emit('wall' + socketReceiverName, {user: $(this).parent().find('li.tweet_user').text(),
                                     text: $(this).parent().find('div.tweet_text').text(),
-                                    user_img: $(this).parent().find('div.tweet_user_img').text()} );
+                                    user_img: $(this).parent().find('div.tweet_user_img').text(),
+                                    user_name: $(this).parent().find('div.tweet_user_name').text(),
+                                    date: $(this).parent().find('div.tweet_date').text()} );
                 $(this).parent().remove();
             });
             $(document).on("click", "button.btn-danger" , function() {
