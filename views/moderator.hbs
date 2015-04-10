@@ -46,10 +46,11 @@
             console.log(socketReceiverName);
             socket.on(socketReceiverName, function (tweet){
                 tweet_list
-                        .prepend('<ul class="tweet"><li class="tweet_user">' + tweet.user + '</li><div class="tweet_text">"' + tweet.text + '</div> + ' +
+                        .prepend('<ul class="tweet"><li class="tweet_user" style="font-weight: bold;display: inline-block;">' + tweet.user + '</li> ( ' + '<div class="tweet_date" style="display: inline-block;">' + tweet.date + '</div>' + ' )' +
+                        '<div class="tweet_text">' + tweet.text + '</div>' +
                         '<div class="tweet_user_img" style="display: none;">' + tweet.user_img + '</div>' +
                         '<div class="tweet_user_name" style="display: none;">' + tweet.user_name + '</div>' +
-                        '<div class="tweet_date" style="display: none;">' + tweet.date + '</div>'+'<button type="button" class="btn btn-success"> ' +
+                        '<button type="button" class="btn btn-success"> ' +
                         '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span>Accept</button>' + '<button type="button" class="btn btn-danger"> ' +
                         '<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>Remove</button></div>');
             });

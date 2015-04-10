@@ -14,7 +14,7 @@ function timeConverter(timestamp){
     var date = a.getDate();
     var hour = ("0" + a.getHours()).slice(-2);
     var min = ("0" + a.getMinutes()).slice(-2);
-    var time = date + ',' + month + ' ' + year + ' ' + hour + ':' + min;
+    var time = date + ', ' + month + ' ' + year + ' ' + hour + ':' + min;
     return time;
 }
 
