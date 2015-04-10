@@ -25,6 +25,11 @@
             <ul class="nav navbar-nav">
                 <li><a href="/wall/{{user.hashtag}}" target="_blank">Go to wall</a></li>
             </ul>
+            {{#if user.admin}}
+                <ul class="nav navbar-nav">
+                    <li><a href="/admin" target="_blank">Administration</a></li>
+                </ul>
+            {{/if}}
             <ul class="nav navbar-nav navbar-right">
                 <li><a href="#">{{user.hashtag}}</a></li>
             </ul>
