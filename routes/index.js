@@ -124,26 +124,10 @@ router.get('/moderator', function(req, res, next) {
     }
 });
 
-/* GET wall page. */
-router.get('/wall', function(req, res, next) {
-    if (req.session.username) {
-        var coll = mongo.collection('users');
-        coll.findOne({username: req.session.username}, function(err, user){
-            if (user) {
-                // set a 'user' property on req
-                // so that the 'requireUser' middleware can check if the user is
-                // logged in
-                req.user = user;
-
-                // Set a res.locals variable called 'user' so that it is available
-                // to every handlebars template.
-                res.locals.user = user;
-            }
-            res.render('wall', {user:user});
-        });
-    } else {
-        res.render('login');
-    }
+/* GET wall page. .*/
+router.get('/wall/:hashtag', function(req, res, next) {
+    if(req.params.hashtag != "")
+        res.render('wall', {hashtag: req.params.hashtag});
 });
 
 module.exports = router;
