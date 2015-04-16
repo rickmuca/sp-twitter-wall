@@ -111,9 +111,30 @@ router.get('/moderator', function(req, res, next) {
                     });
                 });
 
+                var clients = {};
+
                 global.io.on('connection', function (socket) {
+                    twitter_clients[user.hashtag].get('search/tweets', {q: user.hashtag, count: 10}, function(error, tweets, response) {
+                        tweets.statuses.forEach(function(tweet) {
+                            socket.emit(user.hashtag, {
+                                id: tweet.id,
+                                user_name: tweet.user.name,
+                                user: tweet.user.screen_name,
+                                user_img: tweet.user.profile_image_url,
+                                text: tweet.text,
+                                date: timeConverter(new Date(tweet.created_at).getTime())
+                            });
+                        });
+                    });
+
                     socket.on('wall'+ user.hashtag, function (data) {
                         global.io.sockets.emit('wall' + user.hashtag, data);
+                    });
+
+                    socket.on('disconnect', function() {
+                        console.log('Got disconnect!');
+
+                        delete clients[socket.id];
                     });
                 });
             }

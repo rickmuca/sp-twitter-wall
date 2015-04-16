@@ -47,7 +47,6 @@
             var tweet_list = $('ul.tweets');
             socket.on('wall' + socketReceiverName, function (tweet){
                 tweet_list
-//                        .prepend("<img src=" + tweet.user_img + "> " + tweet.user + "<p>" + tweet.text + '<p>');
                         .prepend('<div class="panel panel-primary" style="width:33%; display: inline-block;">' +
                                     '<div class="panel-body">' +
                                         '<div class="user_image" style="width:10%;"><img style="position: absolute; bottom: xxpx;" src=' + tweet.user_img + '></div>' +
