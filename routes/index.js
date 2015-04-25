@@ -72,6 +72,17 @@ router.get('/', function(req, res, next) {
     }
 });
 
+router.post('/retweets/:hashtag', function(req, res, next) {
+    console.log("Hola");
+    if(twitter_clients[req.params.hashtag].send_retweets) {
+        twitter_clients[req.params.hashtag].send_retweets = false;
+    }
+    else {
+        twitter_clients[req.params.hashtag].send_retweets = true;
+    }
+    next;
+});
+
 /* GET moderator page */
 router.get('/moderator', function(req, res, next) {
     if (req.session.username) {
@@ -91,19 +102,35 @@ router.get('/moderator', function(req, res, next) {
                     consumer_key: 'l0RgpgwZqmFHELC4mLFbweiPn',
                     consumer_secret: 'elePPB56ILavK7sGmcpvZqn1LuENe5B6ikLMYILpZIyH1w2HDd',
                     access_token_key: '1903965426-BX530HWvnDW6uEt7F8ezpnsuCzNjGlrjVpY2Lwd',
-                    access_token_secret: '4iZ6r19k7tWlxT4nYa4oQbj2KMFeUyK9vEweYdpgaQ7Gf'
+                    access_token_secret: '4iZ6r19k7tWlxT4nYa4oQbj2KMFeUyK9vEweYdpgaQ7Gf',
                 });
+                twitter_clients[user.hashtag].send_retweets = true;
 
                 twitter_clients[user.hashtag].stream('statuses/filter', {track: user.hashtag}, function(stream) {
                     stream.on('data', function(tweet) {
-                        global.io.sockets.emit(user.hashtag, {
-                            id: tweet.id,
-                            user_name: tweet.user.name,
-                            user: tweet.user.screen_name,
-                            user_img: tweet.user.profile_image_url,
-                            text: tweet.text,
-                            date: timeConverter(tweet.timestamp_ms)
-                        });
+                        console.log(twitter_clients[user.hashtag].send_retweets);
+                        if( twitter_clients[user.hashtag].send_retweets ){
+                            global.io.sockets.emit(user.hashtag, {
+                                id: tweet.id,
+                                user_name: tweet.user.name,
+                                user: tweet.user.screen_name,
+                                user_img: tweet.user.profile_image_url,
+                                text: tweet.text,
+                                date: timeConverter(tweet.timestamp_ms)
+                            });
+                        }
+                        else {
+                            if (!tweet.retweeted_status) {
+                                global.io.sockets.emit(user.hashtag, {
+                                    id: tweet.id,
+                                    user_name: tweet.user.name,
+                                    user: tweet.user.screen_name,
+                                    user_img: tweet.user.profile_image_url,
+                                    text: tweet.text,
+                                    date: timeConverter(tweet.timestamp_ms)
+                                });
+                            }
+                        }
                     });
 
                     stream.on('error', function(error) {
@@ -116,14 +143,28 @@ router.get('/moderator', function(req, res, next) {
                 global.io.on('connection', function (socket) {
                     twitter_clients[user.hashtag].get('search/tweets', {q: user.hashtag, count: 10}, function(error, tweets, response) {
                         tweets.statuses.forEach(function(tweet) {
-                            socket.emit(user.hashtag, {
-                                id: tweet.id,
-                                user_name: tweet.user.name,
-                                user: tweet.user.screen_name,
-                                user_img: tweet.user.profile_image_url,
-                                text: tweet.text,
-                                date: timeConverter(new Date(tweet.created_at).getTime())
-                            });
+                            if( twitter_clients[user.hashtag].send_retweets ){
+                                global.io.sockets.emit(user.hashtag, {
+                                    id: tweet.id,
+                                    user_name: tweet.user.name,
+                                    user: tweet.user.screen_name,
+                                    user_img: tweet.user.profile_image_url,
+                                    text: tweet.text,
+                                    date: timeConverter(new Date(tweet.created_at).getTime())
+                                });
+                            }
+                            else {
+                                if (!tweet.retweeted_status) {
+                                    global.io.sockets.emit(user.hashtag, {
+                                        id: tweet.id,
+                                        user_name: tweet.user.name,
+                                        user: tweet.user.screen_name,
+                                        user_img: tweet.user.profile_image_url,
+                                        text: tweet.text,
+                                        date: timeConverter(new Date(tweet.created_at).getTime())
+                                    });
+                                }
+                            }
                         });
                     });
 

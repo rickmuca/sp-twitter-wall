@@ -40,10 +40,18 @@
     <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Automatic approval
 </button>
 <input class="time_approval" type="text" name="time_approval" value="60" maxlength="3" size="3"> secs
-<br><br>
+<h4><input class="retweets" type="checkbox" checked style="margin-left: 2%;" onchange="checkbox_changed()"> Include retweets</h4>
     <ul class="tweets"></ul>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        function checkbox_changed() {
+            console.log("Cabjio");
+            $.ajax({
+                url: "/retweets/" +  $('ul.navbar-right').children('li').text(),
+                type: 'POST'
+            });
+        }
+
         var play = false;
         var id_panel = 1;
         var timeouts = [];
