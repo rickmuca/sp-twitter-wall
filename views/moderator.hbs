@@ -39,27 +39,63 @@
 <button type="button" class="btn btn-primary" style="margin-left: 2%;">
     <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Automatic approval
 </button>
+<input class="time_approval" type="text" name="time_approval" value="60" maxlength="3" size="3"> secs
 <br><br>
     <ul class="tweets"></ul>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        var play = false;
+        var id_panel = 1;
+        var timeouts = [];
         var socket = io.connect();
         var socketReceiverName = $('ul.navbar-right').children('li').text();
+
+        function sendTweet(tweet_object) {
+            $( tweet_object ).each(function() {
+                socket.emit('wall' + socketReceiverName, {user: $(this).find('li.tweet_user').text(),
+                    text: $(this).find('div.tweet_text').text(),
+                    user_img: $(this).find('div.tweet_user_img').text(),
+                    user_name: $(this).find('div.tweet_user_name').text(),
+                    date: $(this).find('div.tweet_date').text()} );
+                $(this).remove();
+            });
+        }
+
         jQuery(function ($) {
             var tweet_list = $('ul.tweets');
-            console.log(socketReceiverName);
             socket.on(socketReceiverName, function (tweet){
-                tweet_list
-                        .append('<div class="panel panel-primary" style="width:98%;"><div class="panel-body"><ul class="tweet"><li class="tweet_user" style="font-weight: bold;display: inline-block;">' + tweet.user + '</li> ( ' + '<div class="tweet_date" style="display: inline-block;">' + tweet.date + '</div>' + ' )' +
-                        '<div class="tweet_text">' + tweet.text + '</div>' +
-                        '<div class="tweet_user_img" style="display: none;">' + tweet.user_img + '</div>' +
-                        '<div class="tweet_user_name" style="display: none;">' + tweet.user_name + '</div>' +
-                        '<button type="button" class="btn btn-success" style="padding-right: 20px; margin-right: 5px"> ' +
-                        '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Accept</button>' + '<button type="button" class="btn btn-danger"> ' +
-                        '<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove</button></div></div></div>');
+                if(play) {
+                    tweet_list
+                            .append('<div class="panel panel-primary" id="' + id_panel + '" style="width:98%;"><div class="panel-body"><ul class="tweet"><li class="tweet_user" style="font-weight: bold;display: inline-block;">' + tweet.user + '</li> ( ' + '<div class="tweet_date" style="display: inline-block;">' + tweet.date + '</div>' + ' )' +
+                            '<div class="tweet_text">' + tweet.text + '</div>' +
+                            '<div class="tweet_user_img" style="display: none;">' + tweet.user_img + '</div>' +
+                            '<div class="tweet_user_name" style="display: none;">' + tweet.user_name + '</div>' +
+                            '<button type="button" class="btn btn-success" style="padding-right: 20px; margin-right: 5px"> ' +
+                            '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Accept</button>' + '<button type="button" class="btn btn-danger"> ' +
+                            '<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove</button></div></div></div>');
+                    var seconds = parseInt($('input.time_approval').val())*1000;
+                    var timeOut = setTimeout( 'sendTweet("#' + id_panel + '");', seconds);
+                    timeouts.push(timeOut);
+                    id_panel++;
+                }
+                else {
+                    tweet_list
+                            .append('<div class="panel panel-primary" style="width:98%;"><div class="panel-body"><ul class="tweet"><li class="tweet_user" style="font-weight: bold;display: inline-block;">' + tweet.user + '</li> ( ' + '<div class="tweet_date" style="display: inline-block;">' + tweet.date + '</div>' + ' )' +
+                            '<div class="tweet_text">' + tweet.text + '</div>' +
+                            '<div class="tweet_user_img" style="display: none;">' + tweet.user_img + '</div>' +
+                            '<div class="tweet_user_name" style="display: none;">' + tweet.user_name + '</div>' +
+                            '<button type="button" class="btn btn-success" style="padding-right: 20px; margin-right: 5px"> ' +
+                            '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Accept</button>' + '<button type="button" class="btn btn-danger"> ' +
+                            '<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove</button></div></div></div>');
+                    timeouts.forEach(function (timeout, index, object) {
+                        clearTimeout(timeout);
+                        object.splice(index, 1);
+                    });
+                }
             });
         });
         $(document).ready(function(){
+            var timeOut;
             $(document).on("click", "button.btn-success" , function() {
                 socket.emit('wall' + socketReceiverName, {user: $(this).parent().find('li.tweet_user').text(),
                                     text: $(this).parent().find('div.tweet_text').text(),
@@ -73,7 +109,16 @@
             });
             $(document).on("click", "button.btn-primary", function(){
                 $(this).find('span').toggleClass("glyphicon-play").toggleClass("glyphicon-stop");
-                
+                $(this).parent().find('input.time_approval').attr('disabled', !$(this).parent().find('input.time_approval').attr('disabled'));
+                if( !play ){
+                    play = true;
+                    var seconds = parseInt($('input.time_approval').val())*1000;
+                    timeOut = setTimeout( 'sendTweet("div.panel-primary");', seconds);
+                }
+                else {
+                    play = false;
+                    clearTimeout(timeOut);
+                }
             });
         });
 
