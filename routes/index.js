@@ -4,7 +4,7 @@ path = require('path');
 var mongo = require('../controllers/mongo');
 var Twitter = require('twitter');
 var twitter_clients = [];
-
+var sockets = [];
 
 function timeConverter(timestamp){
     var a = new Date(parseInt(timestamp));
@@ -73,7 +73,6 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/retweets/:hashtag', function(req, res, next) {
-    console.log("Hola");
     if(twitter_clients[req.params.hashtag].send_retweets) {
         twitter_clients[req.params.hashtag].send_retweets = false;
     }
@@ -97,87 +96,90 @@ router.get('/moderator', function(req, res, next) {
                 // Set a res.locals variable called 'user' so that it is available
                 // to every handlebars template.
                 res.locals.user = user;
+                if (twitter_clients.indexOf(user.hashtag) == -1) {
+                    twitter_clients[user.hashtag] = new Twitter({
+                        consumer_key: 'l0RgpgwZqmFHELC4mLFbweiPn',
+                        consumer_secret: 'elePPB56ILavK7sGmcpvZqn1LuENe5B6ikLMYILpZIyH1w2HDd',
+                        access_token_key: '1903965426-BX530HWvnDW6uEt7F8ezpnsuCzNjGlrjVpY2Lwd',
+                        access_token_secret: '4iZ6r19k7tWlxT4nYa4oQbj2KMFeUyK9vEweYdpgaQ7Gf',
+                    });
+                    twitter_clients[user.hashtag].send_retweets = true;
 
-                twitter_clients[user.hashtag] = new Twitter({
-                    consumer_key: 'l0RgpgwZqmFHELC4mLFbweiPn',
-                    consumer_secret: 'elePPB56ILavK7sGmcpvZqn1LuENe5B6ikLMYILpZIyH1w2HDd',
-                    access_token_key: '1903965426-BX530HWvnDW6uEt7F8ezpnsuCzNjGlrjVpY2Lwd',
-                    access_token_secret: '4iZ6r19k7tWlxT4nYa4oQbj2KMFeUyK9vEweYdpgaQ7Gf',
-                });
-                twitter_clients[user.hashtag].send_retweets = true;
+                    global.io.on('connection', function (socket) {
+                        if (sockets.indexOf(socket.id) == -1) {
+                            sockets.push(socket.id);
+                            twitter_clients[user.hashtag].get('search/tweets', {q: user.hashtag, count: 10}, function(error, tweets, response) {
+                                tweets.statuses.forEach(function(tweet) {
+                                    if( twitter_clients[user.hashtag].send_retweets ){
+                                        socket.emit(user.hashtag, {
+                                            id: tweet.id,
+                                            user_name: tweet.user.name,
+                                            user: tweet.user.screen_name,
+                                            user_img: tweet.user.profile_image_url,
+                                            text: tweet.text,
+                                            date: timeConverter(new Date(tweet.created_at).getTime())
+                                        });
+                                    }
+                                    else {
+                                        if (!tweet.retweeted_status) {
+                                            socket.emit(user.hashtag, {
+                                                id: tweet.id,
+                                                user_name: tweet.user.name,
+                                                user: tweet.user.screen_name,
+                                                user_img: tweet.user.profile_image_url,
+                                                text: tweet.text,
+                                                date: timeConverter(new Date(tweet.created_at).getTime())
+                                            });
+                                        }
+                                    }
+                                });
+                            });
+                            twitter_clients[user.hashtag].stream('statuses/filter', {track: user.hashtag}, function(stream) {
+                                stream.on('data', function(tweet) {
+                                    if( twitter_clients[user.hashtag].send_retweets ){
+                                        socket.emit(user.hashtag, {
+                                            id: tweet.id,
+                                            user_name: tweet.user.name,
+                                            user: tweet.user.screen_name,
+                                            user_img: tweet.user.profile_image_url,
+                                            text: tweet.text,
+                                            date: timeConverter(tweet.timestamp_ms)
+                                        });
+                                    }
+                                    else {
+                                        if (!tweet.retweeted_status) {
+                                            socket.emit(user.hashtag, {
+                                                id: tweet.id,
+                                                user_name: tweet.user.name,
+                                                user: tweet.user.screen_name,
+                                                user_img: tweet.user.profile_image_url,
+                                                text: tweet.text,
+                                                date: timeConverter(tweet.timestamp_ms)
+                                            });
+                                        }
+                                    }
+                                });
 
-                twitter_clients[user.hashtag].stream('statuses/filter', {track: user.hashtag}, function(stream) {
-                    stream.on('data', function(tweet) {
-                        console.log(twitter_clients[user.hashtag].send_retweets);
-                        if( twitter_clients[user.hashtag].send_retweets ){
-                            global.io.sockets.emit(user.hashtag, {
-                                id: tweet.id,
-                                user_name: tweet.user.name,
-                                user: tweet.user.screen_name,
-                                user_img: tweet.user.profile_image_url,
-                                text: tweet.text,
-                                date: timeConverter(tweet.timestamp_ms)
+                                stream.on('error', function(error) {
+                                    console.log(true);
+                                });
+                            });
+
+
+
+                            socket.on('wall'+ user.hashtag, function (data) {
+                                global.io.sockets.emit('wall' + user.hashtag, data);
+                            });
+
+                            socket.on('disconnect', function() {
+                                var i = sockets.indexOf(socket.id);
+                                delete sockets[i];
                             });
                         }
-                        else {
-                            if (!tweet.retweeted_status) {
-                                global.io.sockets.emit(user.hashtag, {
-                                    id: tweet.id,
-                                    user_name: tweet.user.name,
-                                    user: tweet.user.screen_name,
-                                    user_img: tweet.user.profile_image_url,
-                                    text: tweet.text,
-                                    date: timeConverter(tweet.timestamp_ms)
-                                });
-                            }
-                        }
                     });
+                }
 
-                    stream.on('error', function(error) {
-                        throw error;
-                    });
-                });
 
-                var clients = {};
-
-                global.io.on('connection', function (socket) {
-                    twitter_clients[user.hashtag].get('search/tweets', {q: user.hashtag, count: 10}, function(error, tweets, response) {
-                        tweets.statuses.forEach(function(tweet) {
-                            if( twitter_clients[user.hashtag].send_retweets ){
-                                global.io.sockets.emit(user.hashtag, {
-                                    id: tweet.id,
-                                    user_name: tweet.user.name,
-                                    user: tweet.user.screen_name,
-                                    user_img: tweet.user.profile_image_url,
-                                    text: tweet.text,
-                                    date: timeConverter(new Date(tweet.created_at).getTime())
-                                });
-                            }
-                            else {
-                                if (!tweet.retweeted_status) {
-                                    global.io.sockets.emit(user.hashtag, {
-                                        id: tweet.id,
-                                        user_name: tweet.user.name,
-                                        user: tweet.user.screen_name,
-                                        user_img: tweet.user.profile_image_url,
-                                        text: tweet.text,
-                                        date: timeConverter(new Date(tweet.created_at).getTime())
-                                    });
-                                }
-                            }
-                        });
-                    });
-
-                    socket.on('wall'+ user.hashtag, function (data) {
-                        global.io.sockets.emit('wall' + user.hashtag, data);
-                    });
-
-                    socket.on('disconnect', function() {
-                        console.log('Got disconnect!');
-
-                        delete clients[socket.id];
-                    });
-                });
             }
             res.render('moderator', {user:user});
         });

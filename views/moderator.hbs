@@ -45,7 +45,6 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         function checkbox_changed() {
-            console.log("Cabjio");
             $.ajax({
                 url: "/retweets/" +  $('ul.navbar-right').children('li').text(),
                 type: 'POST'
@@ -55,6 +54,7 @@
         var play = false;
         var id_panel = 1;
         var timeouts = [];
+        io.sockets = {};
         var socket = io.connect();
         var socketReceiverName = $('ul.navbar-right').children('li').text();
 
