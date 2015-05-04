@@ -70,7 +70,10 @@
                     '<div class="tweet_user_name" style="display: none;">' + tweet.user_name + '</div>';
 
             if(tweet.image != undefined) {
-                tweet_html = tweet_html + '<div class="tweet_image" style="width:10%";><img style="position: absolute; bottom: xxpx;" src=' + tweet.image + '></div>';
+                tweet_html = tweet_html + '<div class="tweet_image" style="color: white;"><img style="width:10%;" src=' + tweet.image + '>' + tweet.image + '</div>';
+            }
+            else {
+                tweet_html = tweet_html + '<div class="tweet_image" style="display: none;">' + tweet.image + '</div>';
             }
             tweet_html = tweet_html + '<button type="button" class="btn btn-success" style="padding-right: 20px; margin-right: 5px"> ' +
                 '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Accept</button>' + '<button type="button" class="btn btn-danger"> ' +
@@ -105,7 +108,8 @@
                                     text: $(this).parent().find('div.tweet_text').text(),
                                     user_img: $(this).parent().find('div.tweet_user_img').text(),
                                     user_name: $(this).parent().find('div.tweet_user_name').text(),
-                                    date: $(this).parent().find('div.tweet_date').text()} );
+                                    date: $(this).parent().find('div.tweet_date').text(),
+                                    image: $(this).parent().find('div.tweet_image').text()});
                 $(this).parent().parent().parent().remove();
             });
             $(document).on("click", "button.btn-danger" , function() {

@@ -41,20 +41,30 @@
 <ul class="tweets"></ul>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        function generateTweet(tweet) {
+            var tweet_html = '<div class="panel panel-primary" style="width:33%; display: inline-block;">' +
+            '<div class="panel-body">' +
+            '<div class="user_image" style="width:10%;"><img style="position: absolute; bottom: xxpx;" src=' + tweet.user_img + '></div>' +
+            '<div class="userdata" style="display: inline-block; font-weight: bold; width:90%; margin-left:5%; padding-left:5%;">' + tweet.user_name + '</br>@' + tweet.user +
+            '<div class="date" style="display; inline-block; text-align: right; font-weight: normal;">' + tweet.date + '</div>' +
+            '</div>' +
+            '</div>' +
+            '<div class="panel-heading"><h3 class="panel-title">' + tweet.text + '</h3>';
+            if(tweet.image != 'undefined'){
+                tweet_html = tweet_html + '<div class="image"><img src=' + tweet.image + '></div>';
+            }
+            tweet_html = tweet_html  + '</div></div>';
+            return tweet_html;
+
+        }
+
         var socket = io.connect();
         var socketReceiverName = $('ul.navbar-right').children('li').text();
         jQuery(function ($) {
             var tweet_list = $('ul.tweets');
             socket.on('wall' + socketReceiverName, function (tweet){
                 tweet_list
-                        .prepend('<div class="panel panel-primary" style="width:33%; display: inline-block;">' +
-                                    '<div class="panel-body">' +
-                                        '<div class="user_image" style="width:10%;"><img style="position: absolute; bottom: xxpx;" src=' + tweet.user_img + '></div>' +
-                                        '<div class="userdata" style="display: inline-block; font-weight: bold; width:90%; margin-left:5%; padding-left:5%;">' + tweet.user_name + '</br>@' + tweet.user +
-                                            '<div class="date" style="display; inline-block; text-align: right; font-weight: normal;">' + tweet.date + '</div>' +
-                                        '</div>' +
-                                    '</div>' +
-                                    '<div class="panel-heading"><h3 class="panel-title">' + tweet.text + '</h3></div></div>');
+                        .prepend(generateTweet(tweet));
             });
         });
     </script>
