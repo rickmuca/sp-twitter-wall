@@ -27,7 +27,7 @@
             </ul>
             {{#if user.admin}}
                 <ul class="nav navbar-nav">
-                    <li><a href="/admin" target="_blank">Administration</a></li>
+                    <li><a href="/admin">Administration</a></li>
                 </ul>
             {{/if}}
             <ul class="nav navbar-nav navbar-right">
@@ -40,17 +40,11 @@
     <span class="glyphicon glyphicon-play" aria-hidden="true"></span> Automatic approval
 </button>
 <input class="time_approval" type="text" name="time_approval" value="60" maxlength="3" size="3"> secs
-<h4><input class="retweets" type="checkbox" checked style="margin-left: 2%;" onchange="checkbox_changed()"> Include retweets</h4>
+<h4><input class="retweets" type="checkbox" checked style="margin-left: 2%;"> Include retweets
+    <input class="uploaded_images" type="checkbox" checked style="margin-left: 2%;"> Include images</h4>
     <ul class="tweets"></ul>
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        function checkbox_changed() {
-            $.ajax({
-                url: "/retweets/" +  $('ul.navbar-right').children('li').text(),
-                type: 'POST'
-            });
-        }
-
         var play = false;
         var id_panel = 1;
         var timeouts = [];
@@ -64,41 +58,52 @@
                     text: $(this).find('div.tweet_text').text(),
                     user_img: $(this).find('div.tweet_user_img').text(),
                     user_name: $(this).find('div.tweet_user_name').text(),
-                    date: $(this).find('div.tweet_date').text()} );
+                    date: $(this).find('div.tweet_date').text(),
+                    image: $(this).find('div.tweet_image').text()
+                });
                 $(this).remove();
             });
+        }
+
+        function generateTweet(tweet) {
+            var tweet_html = '<div class="panel panel-primary" id="' + id_panel + '" style="width:98%;"><div class="panel-body"><ul class="tweet"><li class="tweet_user" style="font-weight: bold;display: inline-block;">' + tweet.user + '</li> ( ' + '<div class="tweet_date" style="display: inline-block;">' + tweet.date + '</div>' + ' )' +
+                    '<div class="tweet_text">' + tweet.text + '</div>' +
+                    '<div class="tweet_user_img" style="display: none;">' + tweet.user_img + '</div>' +
+                    '<div class="tweet_user_name" style="display: none;">' + tweet.user_name + '</div>';
+
+            if(tweet.image != undefined && $('input.uploaded_images').is(':checked')) {
+                tweet_html = tweet_html + '<div class="tweet_image" style="color: white;"><img style="width:10%;" src=' + tweet.image + '>' + tweet.image + '</div>';
+            }
+            else {
+                tweet_html = tweet_html + '<div class="tweet_image" style="display: none;">' + tweet.image + '</div>';
+            }
+            tweet_html = tweet_html + '<button type="button" class="btn btn-success" style="padding-right: 20px; margin-right: 5px"> ' +
+                '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Accept</button>' + '<button type="button" class="btn btn-danger"> ' +
+                '<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove</button></div></div></div>';
+            return tweet_html;
+
         }
 
         jQuery(function ($) {
             var tweet_list = $('ul.tweets');
             socket.on(socketReceiverName, function (tweet){
-                if(play) {
+                if($('input.retweets').is(':checked') || tweet.retweet == undefined) {
+                    console.log(tweet.retweet);
+
                     tweet_list
-                            .append('<div class="panel panel-primary" id="' + id_panel + '" style="width:98%;"><div class="panel-body"><ul class="tweet"><li class="tweet_user" style="font-weight: bold;display: inline-block;">' + tweet.user + '</li> ( ' + '<div class="tweet_date" style="display: inline-block;">' + tweet.date + '</div>' + ' )' +
-                            '<div class="tweet_text">' + tweet.text + '</div>' +
-                            '<div class="tweet_user_img" style="display: none;">' + tweet.user_img + '</div>' +
-                            '<div class="tweet_user_name" style="display: none;">' + tweet.user_name + '</div>' +
-                            '<button type="button" class="btn btn-success" style="padding-right: 20px; margin-right: 5px"> ' +
-                            '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Accept</button>' + '<button type="button" class="btn btn-danger"> ' +
-                            '<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove</button></div></div></div>');
-                    var seconds = parseInt($('input.time_approval').val())*1000;
-                    var timeOut = setTimeout( 'sendTweet("#' + id_panel + '");', seconds);
-                    timeouts.push(timeOut);
-                    id_panel++;
-                }
-                else {
-                    tweet_list
-                            .append('<div class="panel panel-primary" style="width:98%;"><div class="panel-body"><ul class="tweet"><li class="tweet_user" style="font-weight: bold;display: inline-block;">' + tweet.user + '</li> ( ' + '<div class="tweet_date" style="display: inline-block;">' + tweet.date + '</div>' + ' )' +
-                            '<div class="tweet_text">' + tweet.text + '</div>' +
-                            '<div class="tweet_user_img" style="display: none;">' + tweet.user_img + '</div>' +
-                            '<div class="tweet_user_name" style="display: none;">' + tweet.user_name + '</div>' +
-                            '<button type="button" class="btn btn-success" style="padding-right: 20px; margin-right: 5px"> ' +
-                            '<span class="glyphicon glyphicon-ok" aria-hidden="true"></span> Accept</button>' + '<button type="button" class="btn btn-danger"> ' +
-                            '<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Remove</button></div></div></div>');
-                    timeouts.forEach(function (timeout, index, object) {
-                        clearTimeout(timeout);
-                        object.splice(index, 1);
-                    });
+                            .append(generateTweet(tweet));
+                    if(play) {
+                        var seconds = parseInt($('input.time_approval').val())*1000;
+                        var timeOut = setTimeout( 'sendTweet("#' + id_panel + '");', seconds);
+                        timeouts.push(timeOut);
+                        id_panel++;
+                    }
+                    else {
+                        timeouts.forEach(function (timeout, index, object) {
+                            clearTimeout(timeout);
+                            object.splice(index, 1);
+                        });
+                    }
                 }
             });
         });
@@ -109,7 +114,8 @@
                                     text: $(this).parent().find('div.tweet_text').text(),
                                     user_img: $(this).parent().find('div.tweet_user_img').text(),
                                     user_name: $(this).parent().find('div.tweet_user_name').text(),
-                                    date: $(this).parent().find('div.tweet_date').text()} );
+                                    date: $(this).parent().find('div.tweet_date').text(),
+                                    image: $(this).parent().find('div.tweet_image').text()});
                 $(this).parent().parent().parent().remove();
             });
             $(document).on("click", "button.btn-danger" , function() {
