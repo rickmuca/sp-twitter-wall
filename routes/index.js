@@ -122,7 +122,8 @@ router.get('/moderator', function(req, res, next) {
                                         user_img: tweet.user.profile_image_url,
                                         text: tweet.text,
                                         date: timeConverter(new Date(tweet.created_at).getTime()),
-                                        image: getMedia(tweet)
+                                        image: getMedia(tweet),
+                                        retweet: tweet.retweeted_status
                                     });
                                 });
                             });
@@ -135,7 +136,8 @@ router.get('/moderator', function(req, res, next) {
                                         user_img: tweet.user.profile_image_url,
                                         text: tweet.text,
                                         date: timeConverter(tweet.timestamp_ms),
-                                        image: getMedia(tweet)
+                                        image: getMedia(tweet),
+                                        retweet: tweet.retweeted_status
                                     });
                                 });
 
