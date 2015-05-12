@@ -41,6 +41,7 @@
 <ul class="tweets"></ul>
     <script src="/socket.io/socket.io.js"></script>
     <script>
+        var tweet_limit = 12;
         function generateTweet(tweet) {
             var tweet_html = '<div class="panel panel-primary" style="width:33%; display: inline-block;">' +
             '<div class="panel-body">' +
@@ -55,7 +56,6 @@
             }
             tweet_html = tweet_html  + '</div></div>';
             return tweet_html;
-
         }
 
         var socket = io.connect();
@@ -65,6 +65,10 @@
             socket.on('wall' + socketReceiverName, function (tweet){
                 tweet_list
                         .prepend(generateTweet(tweet));
+                console.log($("div.panel-primary").length);
+                if($("div.panel-primary").length > tweet_limit) {
+                    $("div.panel-primary")[tweet_limit].remove();
+                }
             });
         });
     </script>
