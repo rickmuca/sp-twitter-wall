@@ -3,8 +3,8 @@ var router = express.Router();
 path = require('path');
 var mongo = require('../controllers/mongo');
 var Twitter = require('twitter');
-var twitter_clients = [];
-var sockets = [];
+var twitter_clients = {};
+var sockets = {};
 
 function timeConverter(timestamp){
     var a = new Date(parseInt(timestamp));
@@ -102,20 +102,20 @@ router.get('/moderator', function(req, res, next) {
                 // Set a res.locals variable called 'user' so that it is available
                 // to every handlebars template.
                 res.locals.user = user;
-                if (twitter_clients.indexOf(user.hashtag) == -1) {
+                if (twitter_clients[user.hashtag] == undefined) {
                     twitter_clients[user.hashtag] = new Twitter({
                         consumer_key: 'bXaTv73Ok9XyQFbg9BXo8AxbQ',
                         consumer_secret: 'NEdSJWPkkuYpBBRwV9KQQcHrJHHPVcUhJayrjdTD71FN2l9sSW',
                         access_token_key: '3220818046-QzEAsYrmrB72oNdhwsrOYzoeDdEBXYxUsIQn9uX',
                         access_token_secret: 'WouRNz2utdU6XeDtaaWpC5hr58aWH4W0rFjPlYFSolc3T'
                     });
-
+                    console.log(Object.keys(twitter_clients).length);
                     global.io.on('connection', function (socket) {
-                        if (sockets.indexOf(socket.id) == -1) {
-                            sockets.push(socket.id);
+                        if (sockets[socket.id] == undefined ) {
+                            sockets[socket.id] = socket;
                             twitter_clients[user.hashtag].get('search/tweets', {q: user.hashtag, count: 10}, function(error, tweets, response) {
                                 tweets.statuses.forEach(function(tweet) {
-                                    socket.emit(user.hashtag, {
+                                    global.io.sockets.emit(user.hashtag, {
                                         id: tweet.id,
                                         user_name: tweet.user.name,
                                         user: tweet.user.screen_name,
@@ -129,7 +129,7 @@ router.get('/moderator', function(req, res, next) {
                             });
                             twitter_clients[user.hashtag].stream('statuses/filter', {track: user.hashtag}, function(stream) {
                                 stream.on('data', function(tweet) {
-                                    socket.emit(user.hashtag, {
+                                    global.io.sockets.emit(user.hashtag, {
                                         id: tweet.id,
                                         user_name: tweet.user.name,
                                         user: tweet.user.screen_name,
@@ -142,7 +142,7 @@ router.get('/moderator', function(req, res, next) {
                                 });
 
                                 stream.on('error', function(error) {
-                                    console.log(true);
+                                    //console.log(error);
                                 });
                             });
 
@@ -153,8 +153,7 @@ router.get('/moderator', function(req, res, next) {
                             });
 
                             socket.on('disconnect', function() {
-                                var i = sockets.indexOf(socket.id);
-                                delete sockets[i];
+                                delete sockets[socket.id];
                             });
                         }
                     });
@@ -173,7 +172,7 @@ router.get('/moderator', function(req, res, next) {
 router.get('/wall/:user', function(req, res, next) {
     if(req.params.user != ""){
         var coll = mongo.collection('users');
-        coll.findOne({username: req.session.username}, function(err, user) {
+        coll.findOne({username: req.params.user}, function(err, user) {
             if (user) {
                 res.render('wall', {user: user});
             }
