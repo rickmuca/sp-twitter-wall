@@ -115,7 +115,7 @@ router.get('/moderator', function(req, res, next) {
                             sockets[socket.id] = socket;
                             twitter_clients[user.hashtag].get('search/tweets', {q: user.hashtag, count: 10}, function(error, tweets, response) {
                                 tweets.statuses.forEach(function(tweet) {
-                                    global.io.sockets.emit(user.hashtag, {
+                                    socket.emit(user.hashtag, {
                                         id: tweet.id,
                                         user_name: tweet.user.name,
                                         user: tweet.user.screen_name,
@@ -129,7 +129,7 @@ router.get('/moderator', function(req, res, next) {
                             });
                             twitter_clients[user.hashtag].stream('statuses/filter', {track: user.hashtag}, function(stream) {
                                 stream.on('data', function(tweet) {
-                                    global.io.sockets.emit(user.hashtag, {
+                                    socket.emit(user.hashtag, {
                                         id: tweet.id,
                                         user_name: tweet.user.name,
                                         user: tweet.user.screen_name,
